@@ -26,24 +26,22 @@ public class DynmapHook extends PluginHook {
         super(superVanish);
     }
 
-    private void adjustVisibility(Player p, boolean hide) {
+    private void adjustVisibility(Player p, boolean hide, boolean broadcast) {
         try {
             DynmapPlugin dynmap = (DynmapPlugin) Bukkit.getPluginManager()
                     .getPlugin("dynmap");
             SuperVanish plugin = superVanish;
             boolean sendJoinLeave
                     = superVanish.getSettings().getBoolean("HookOptions.DynmapSendJoinLeaveMessages")
-                    && !plugin.getMessage("DynmapFakeJoin").equals("");
+                    && broadcast;
             if (hide) {
-                dynmap.setPlayerVisiblity(p, false);
                 if (sendJoinLeave)
-                    dynmap.sendBroadcastToWeb("",
-                            plugin.replacePlaceholders(plugin.getMessage("DynmapFakeQuit"), p));
+                    dynmap.postPlayerJoinQuitToWeb(p, false);
+                dynmap.assertPlayerInvisibility(p, true, plugin);
             } else {
-                dynmap.setPlayerVisiblity(p, true);
+                dynmap.assertPlayerInvisibility(p, false, plugin);
                 if (sendJoinLeave)
-                    dynmap.sendBroadcastToWeb("",
-                            plugin.replacePlaceholders(plugin.getMessage("DynmapFakeJoin"), p));
+                    dynmap.postPlayerJoinQuitToWeb(p, true);
             }
         } catch (Exception e) {
             superVanish.logException(e);
@@ -54,28 +52,28 @@ public class DynmapHook extends PluginHook {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onVanish(PlayerHideEvent e) {
         Player p = e.getPlayer();
-        adjustVisibility(p, true);
+        adjustVisibility(p, true, true);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onReappear(PlayerShowEvent e) {
         Player p = e.getPlayer();
-        adjustVisibility(p, false);
+        adjustVisibility(p, false, true);
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
         if (superVanish.getVanishStateMgr().isVanished(p.getUniqueId())) {
-            adjustVisibility(p, true);
+            adjustVisibility(p, true, false);
         }
     }
 
-    @EventHandler
+/*    @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         Player p = e.getPlayer();
         if (superVanish.getVanishStateMgr().isVanished(p.getUniqueId())) {
-            adjustVisibility(p, false);
+            adjustVisibility(p, false, false);
         }
-    }
+    }*/
 }
